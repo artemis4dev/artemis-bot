@@ -1,8 +1,8 @@
 import requests
 
-TOKEN = "SEU_TOKEN"
+TOKEN = "8645674167:AAH9NCm_MHzHhSYSzivgSgmnXcU8vEYNGVU"
 
-url = f"https://api.telegram.org/bot{8645674167:AAH9NCm_MHzHhSYSzivgSgmnXcU8vEYNGVU}/getUpdates"
+url = f"https://api.telegram.org/bot{TOKEN}/getUpdates"
 
 r = requests.get(url)
 
