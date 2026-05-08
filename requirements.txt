@@ -1,3 +1,11 @@
-python-telegram-bot==20.7
-requests
+python-telegram-bot==22.7
+telethon
+flask
+uvicorn
+httpx
 pytz
+apscheduler
+python-dotenv
+psycopg2-binary
+tgcrypto
+pysocks
