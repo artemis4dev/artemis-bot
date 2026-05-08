@@ -10,7 +10,7 @@ from telegram.error import BadRequest, TelegramError
 # ================================
 
 TOKEN = "8645674167:AAH9NCm_MHzHhSYSzivgSgmnXcU8vEYNGVU"
-CHAT_ID = -1003817147897
+CHAT_ID = 6541300474
 
 # FUSO HORÁRIO BRASIL
 tz = pytz.timezone("America/Sao_Paulo")
