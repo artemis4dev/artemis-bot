@@ -6,6 +6,8 @@ import sys
 
 import pytz
 
+from dotenv import load_dotenv
+
 from datetime import datetime, timedelta
 
 from telegram import Bot
@@ -17,6 +19,12 @@ from telegram.error import Forbidden
 from telegram.error import NetworkError
 from telegram.error import RetryAfter
 from telegram.error import TelegramError
+
+# ==========================================
+# CARREGAR .ENV
+# ==========================================
+
+load_dotenv()
 
 # ==========================================
 # UTF-8
@@ -43,10 +51,10 @@ TOKEN = os.getenv("BOT_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 
 if not TOKEN:
-    raise ValueError("BOT_TOKEN não encontrado")
+    raise ValueError("BOT_TOKEN não encontrado no .env")
 
 if not CHAT_ID:
-    raise ValueError("CHAT_ID não encontrado")
+    raise ValueError("CHAT_ID não encontrado no .env")
 
 CHAT_ID = int(CHAT_ID)
 
