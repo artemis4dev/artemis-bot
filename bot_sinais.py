@@ -1,19 +1,64 @@
 import asyncio
+import logging
+import os
 import random
+import sys
+
 import pytz
+
 from datetime import datetime, timedelta
-from telegram import Bot, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.error import BadRequest, TelegramError
 
-# ================================
+from telegram import Bot
+from telegram import InlineKeyboardButton
+from telegram import InlineKeyboardMarkup
+
+from telegram.error import BadRequest
+from telegram.error import Forbidden
+from telegram.error import NetworkError
+from telegram.error import RetryAfter
+from telegram.error import TelegramError
+
+# ==========================================
+# UTF-8
+# ==========================================
+
+sys.stdout.reconfigure(encoding="utf-8")
+
+# ==========================================
+# LOGS
+# ==========================================
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s | %(levelname)s | %(message)s"
+)
+
+logger = logging.getLogger(__name__)
+
+# ==========================================
 # CONFIGURAÇÕES
-# ================================
+# ==========================================
 
-TOKEN = "8645674167:AAH9NCm_MHzHhSYSzivgSgmnXcU8vEYNGVU"
-CHAT_ID = 6541300474
+TOKEN = os.getenv("BOT_TOKEN")
+CHAT_ID = os.getenv("CHAT_ID")
 
-# FUSO HORÁRIO BRASIL
+if not TOKEN:
+    raise ValueError("BOT_TOKEN não encontrado")
+
+if not CHAT_ID:
+    raise ValueError("CHAT_ID não encontrado")
+
+CHAT_ID = int(CHAT_ID)
+
+# ==========================================
+# FUSO HORÁRIO
+# ==========================================
+
 tz = pytz.timezone("America/Sao_Paulo")
+
+# ==========================================
+# JOGOS
+# ==========================================
 
 jogos = {
     "tiger": {
@@ -21,16 +66,19 @@ jogos = {
         "imagem": "https://raster.digital/sinais/imagens/fortunetiger.jpg",
         "link": "https://hype33.fun"
     },
+
     "snake": {
         "nome": "🐍 FORTUNE SNAKE 🐍",
         "imagem": "https://raster.digital/sinais/imagens/fortunesnake.jpg",
         "link": "https://hype33.fun"
     },
+
     "dragon": {
         "nome": "🐉 FORTUNE DRAGON 🐉",
         "imagem": "https://raster.digital/sinais/imagens/fortunedragon.jpg",
         "link": "https://hype33.fun"
     },
+
     "rabbit": {
         "nome": "🐰 RABBIT FORTUNE 🐰",
         "imagem": "https://raster.digital/sinais/imagens/rabbitfortune.jpg",
@@ -38,15 +86,25 @@ jogos = {
     }
 }
 
-# ================================
-# BOT
-# ================================
+# ==========================================
+# BOT GLOBAL
+# ==========================================
+
+bot = Bot(
+    token=TOKEN,
+    connect_timeout=30,
+    read_timeout=30,
+    write_timeout=30,
+    pool_timeout=30
+)
+
+# ==========================================
+# ENVIAR SINAIS
+# ==========================================
 
 async def enviar_sinais():
 
-    bot = Bot(token=TOKEN)
-
-    print("🚀 BOT INICIADO")
+    logger.info("🚀 BOT INICIADO")
 
     while True:
 
@@ -61,6 +119,7 @@ async def enviar_sinais():
             duracao = random.randint(240, 360)
 
             tempo = datetime.now(tz) + timedelta(seconds=duracao)
+
             hora = tempo.strftime("%H:%M")
 
             mensagem = f"""
@@ -83,7 +142,12 @@ ESSA AQUI PAGA MUITO ⤵️
 """
 
             teclado = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🎰 JOGAR AGORA", url=jogo["link"])]
+                [
+                    InlineKeyboardButton(
+                        "🎰 JOGAR AGORA",
+                        url=jogo["link"]
+                    )
+                ]
             ])
 
             await bot.send_photo(
@@ -94,7 +158,11 @@ ESSA AQUI PAGA MUITO ⤵️
                 reply_markup=teclado
             )
 
-            print("✅ Sinal enviado:", jogo["nome"], "| Próximo até:", hora)
+            logger.info(
+                f"✅ Sinal enviado | "
+                f"{jogo['nome']} | "
+                f"Próximo até: {hora}"
+            )
 
             await asyncio.sleep(duracao - 30)
 
@@ -112,29 +180,83 @@ https://www.hype33.fun
             await bot.send_message(
                 chat_id=CHAT_ID,
                 text=mensagem_lucro,
-                parse_mode="HTML"
+                parse_mode="HTML",
+                disable_web_page_preview=True
             )
 
-            print("💰 Mensagem de lucro enviada")
+            logger.info("💰 Mensagem de lucro enviada")
 
             await asyncio.sleep(30)
 
+        except RetryAfter as e:
+
+            tempo_espera = int(e.retry_after)
+
+            logger.warning(
+                f"⏳ Flood control | "
+                f"Aguardando {tempo_espera}s"
+            )
+
+            await asyncio.sleep(tempo_espera)
+
+        except Forbidden as e:
+
+            logger.error(f"🚫 Sem permissão: {e}")
+
+            await asyncio.sleep(60)
+
         except BadRequest as e:
-            print("⚠️ Erro Telegram:", e)
-            await asyncio.sleep(10)
+
+            logger.error(f"⚠️ BadRequest: {e}")
+
+            await asyncio.sleep(15)
+
+        except NetworkError as e:
+
+            logger.error(f"🌐 Erro de rede: {e}")
+
+            await asyncio.sleep(20)
 
         except TelegramError as e:
-            print("⚠️ Falha Telegram:", e)
-            await asyncio.sleep(10)
+
+            logger.error(f"⚠️ TelegramError: {e}")
+
+            await asyncio.sleep(20)
 
         except Exception as erro:
-            print("❌ ERRO GERAL:", erro)
+
+            logger.exception(f"❌ ERRO GERAL: {erro}")
+
+            await asyncio.sleep(30)
+
+# ==========================================
+# MAIN
+# ==========================================
+
+async def main():
+
+    while True:
+
+        try:
+
+            await enviar_sinais()
+
+        except Exception as erro:
+
+            logger.exception(f"🔥 FALHA CRÍTICA: {erro}")
+
             await asyncio.sleep(10)
 
-
-# ================================
+# ==========================================
 # EXECUÇÃO
-# ================================
+# ==========================================
 
 if __name__ == "__main__":
-    asyncio.run(enviar_sinais())
+
+    try:
+
+        asyncio.run(main())
+
+    except KeyboardInterrupt:
+
+        logger.info("🛑 BOT FINALIZADO")
