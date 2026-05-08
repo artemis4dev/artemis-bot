@@ -98,13 +98,7 @@ jogos = {
 # BOT GLOBAL
 # ==========================================
 
-bot = Bot(
-    token=TOKEN,
-    connect_timeout=30,
-    read_timeout=30,
-    write_timeout=30,
-    pool_timeout=30
-)
+bot = Bot(token=TOKEN)
 
 # ==========================================
 # ENVIAR SINAIS
